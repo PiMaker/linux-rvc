@@ -41,6 +41,19 @@ WEAK(memcpy)
 	beqz a4, 4f
 	add a3, a1, a4
 3:
+	# fast memcpy for page-sized chunks
+	lla t0, 10f
+	li t2, 4096
+	bne a2, t2, 11f
+
+	csrw 0x0b1, a1 # src
+	csrw 0x0b2, t6 # dst
+	csrw 0x0b3, a2 # n
+	li t2, 0x1
+	csrw 0x0b0, t2 # memcpy
+	j 10f
+
+11:
 	REG_L a4,       0(a1)
 	REG_L a5,   SZREG(a1)
 	REG_L a6, 2*SZREG(a1)
@@ -76,6 +89,7 @@ WEAK(memcpy)
 	REG_S t1, 15*SZREG(t6)
 	addi t6, t6, 16*SZREG
 	bltu a1, a3, 3b
+10:
 	andi a2, a2, (16*SZREG)-1  /* Update count */
 
 4:
