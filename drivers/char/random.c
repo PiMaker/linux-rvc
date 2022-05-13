@@ -352,6 +352,7 @@
 #include <asm/irq.h>
 #include <asm/irq_regs.h>
 #include <asm/io.h>
+#include <asm/csr.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/random.h>
@@ -1672,6 +1673,7 @@ static void __init init_std_data(void)
 	int i;
 	ktime_t now = ktime_get_real();
 	unsigned long rv;
+	uint32_t rvc_rng;
 
 	mix_pool_bytes(&now, sizeof(now));
 	for (i = POOL_BYTES; i > 0; i -= sizeof(rv)) {
@@ -1681,6 +1683,13 @@ static void __init init_std_data(void)
 		mix_pool_bytes(&rv, sizeof(rv));
 	}
 	mix_pool_bytes(utsname(), sizeof(*(utsname())));
+
+	pr_info("[_pi_] adding 16 byte of rvc randomness to entropy pool\n");
+	for (i = 0; i < 4; i++) {
+		rvc_rng = csr_read(0x0bf);
+		mix_pool_bytes(&rvc_rng, sizeof(rvc_rng));
+	}
+	credit_entropy_bits(1);
 }
 
 /*
