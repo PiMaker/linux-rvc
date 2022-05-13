@@ -644,4 +644,12 @@ config NETDEV_LEGACY_INIT
 	  Drivers that call netdev_boot_setup_check() should select this
 	  symbol, everything else no longer needs it.
 
+config RVCNET
+	bool
+	depends on INET
+	default y
+	help
+	  This driver provides a paravirtualized network interface for the RVC
+	  riscv emulator.
+
 endif # NETDEVICES
