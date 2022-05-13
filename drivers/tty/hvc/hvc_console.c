@@ -614,7 +614,7 @@ static unsigned int hvc_chars_in_buffer(struct tty_struct *tty)
  * there has been no input for some time.
  */
 #define MIN_TIMEOUT		(10)
-#define MAX_TIMEOUT		(2000)
+#define MAX_TIMEOUT		(100)
 static u32 timeout = MIN_TIMEOUT;
 
 /*
