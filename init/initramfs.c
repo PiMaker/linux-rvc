@@ -56,8 +56,10 @@ static ssize_t __init xwrite(struct file *file, const unsigned char *p,
 static __initdata char *message;
 static void __init error(char *x)
 {
-	if (!message)
+	if (!message) {
 		message = x;
+		pr_err("[_pi_] initramfs error: %s\n", x);
+	}
 }
 
 #define panic_show_mem(fmt, ...) \
@@ -487,6 +489,9 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
 	const char *compress_name;
 	static __initdata char msg_buf[64];
 
+	unsigned long len_orig = len;
+	unsigned long len_percent = 0, len_percent_tmp;
+
 	header_buf = kmalloc(110, GFP_KERNEL);
 	symlink_buf = kmalloc(PATH_MAX + N_ALIGN(PATH_MAX) + 1, GFP_KERNEL);
 	name_buf = kmalloc(N_ALIGN(PATH_MAX), GFP_KERNEL);
@@ -494,11 +499,20 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
 	if (!header_buf || !symlink_buf || !name_buf)
 		panic_show_mem("can't allocate buffers");
 
+	pr_info("[_pi_] loading initramfs now, this may take a while...\n");
+
 	state = Start;
 	this_header = 0;
 	message = NULL;
 	while (!message && len) {
 		loff_t saved_offset = this_header;
+
+		len_percent_tmp = (len * 10) / len_orig;
+		if (len_percent_tmp != len_percent) {
+			len_percent = len_percent_tmp;
+			pr_info("[_pi_] initramfs: %lu0%% done\n", 10 - len_percent);
+		}
+
 		if (*buf == '0' && !(this_header & 3)) {
 			state = Start;
 			written = write_buffer(buf, len);
@@ -514,7 +528,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
 		}
 		this_header = 0;
 		decompress = decompress_method(buf, len, &compress_name);
-		pr_debug("Detected %s compressed data\n", compress_name);
+		pr_info("Detected %s compressed data\n", compress_name);
 		if (decompress) {
 			int res = decompress(buf, len, NULL, flush_buffer, NULL,
 				   &my_inptr, error);
@@ -539,6 +553,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
 	kfree(name_buf);
 	kfree(symlink_buf);
 	kfree(header_buf);
+	pr_info("[_pi_] unpack_to_rootfs retval: %s\n", (message && *message) ? message : "<success>");
 	return message;
 }
 
