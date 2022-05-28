@@ -46,10 +46,16 @@ choice
 	 1000 Hz is the preferred choice for desktop systems and other
 	 systems requiring fast interactive responses to events.
 
+	config HZ_20
+		bool "20 HZ"
+	help
+	 20 Hz is very slow lmao.
+
 endchoice
 
 config HZ
 	int
+	default 20 if HZ_20
 	default 100 if HZ_100
 	default 250 if HZ_250
 	default 300 if HZ_300
