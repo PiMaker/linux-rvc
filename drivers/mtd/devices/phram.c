@@ -93,6 +93,8 @@ static int register_device(char *name, phys_addr_t start, size_t len, uint32_t e
 {
 	struct phram_mtd_list *new;
 	int ret = -ENOMEM;
+	uint32_t buffer[3];
+	size_t retlen;
 
 	new = kzalloc(sizeof(*new), GFP_KERNEL);
 	if (!new)
@@ -124,6 +126,11 @@ static int register_device(char *name, phys_addr_t start, size_t len, uint32_t e
 		pr_err("Failed to register new device\n");
 		goto out2;
 	}
+
+	phram_read(&new->mtd, 0, 4*sizeof(uint32_t), &retlen, (uint8_t*)buffer);
+	pr_info("test data 1: %i -> %08x %08x %08x\n", (int)retlen, buffer[0], buffer[1], buffer[2]);
+	phram_read(&new->mtd, 4096*8, 4*sizeof(uint32_t), &retlen, (uint8_t*)buffer);
+	pr_info("test data 2: %i -> %08x %08x %08x\n", (int)retlen, buffer[0], buffer[1], buffer[2]);
 
 	list_add_tail(&new->list, &phram_list);
 	return 0;
